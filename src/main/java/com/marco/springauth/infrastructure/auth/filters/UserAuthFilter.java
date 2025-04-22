@@ -26,30 +26,26 @@ public class UserAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = recoveryTokenFromRequest(request);
 
-        if (token.isEmpty()) {
-            throw new AuthenticationException("Token não informado");
+        if (!token.isEmpty()) {
+            var subject = jwtService.getSubjectFromToken(token);
+            var user = userRepository.findByEmail(subject);
+
+            if (user.isPresent()) {
+                UserDetailsImpl userDetails = new UserDetailsImpl(user.get());
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails.getUsername(), userDetails.getPassword());
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
-        var subject = jwtService.getSubjectFromToken(token);
-        var user = userRepository.findByEmail(subject);
-
-        if (!user.isPresent()) {
-            throw new AuthenticationException("Usuário não encontrado");
-        }
-
-        UserDetailsImpl userDetails = new UserDetailsImpl(user.get());
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails.getUsername(), userDetails.getPassword());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
-
     }
 
     private String recoveryTokenFromRequest(HttpServletRequest request) {
         var authenticationHeader = request.getHeader("Authorization");
 
         if (authenticationHeader == null || authenticationHeader.isEmpty()) {
-            throw new AuthenticationException("Token não informado");
+            return "";
         }
 
         return authenticationHeader.replace("Bearer", "");

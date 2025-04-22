@@ -1,11 +1,9 @@
 package com.marco.springauth.domain.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -13,9 +11,15 @@ public class User {
     private String email;
     private String password;
 
+    public User() {}
+
     public User(String email, String password) {
         this.email = email;
         this.password = password;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getEmail() {
